@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Reftab/Admin Asset Fetcher</title>
+		<link rel="stylesheet" href="/css/index.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script> 
+		<script src="https://malsup.github.io/jquery.form.js"></script> 
+	
+		<script> 
+			$(document).ready(function() {  
+				$('#keyword_input').ajaxForm({ 
+					beforeSubmit: function(arr, $form, options) {
+						fetchAsset(arr[0]['value']);
+					},
+					clearForm: true
+				}); 
+			}); 
+			$(document).ready(function() {  
+				$('#snChangeForm').ajaxForm({ 
+					type: "POST",
+					url: $('#snChangeForm').attr('action'),
+					data: $('#snChangeForm').serialize(),
+					clearForm: true,
+					success: function(data) {
+						display_assets(data, false);
+					},
+					error: function(data) {
+						alert("some Error");
+					}
+				}); 
+				$('#anChangeForm').ajaxForm({ 
+					type: "POST",
+					url: $('#anChangeForm').attr('action'),
+					data: $('#anChangeForm').serialize(),
+					clearForm: true,
+					success: function(data) {
+						display_assets(data, false);
+					},
+					error: function(data) {
+						alert("some Error");
+					}
+				}); 
+				$('#lnChangeForm').ajaxForm({ 
+					type: "POST",
+					url: $('#lnChangeForm').attr('action'),
+					data: $('#lnChangeForm').serialize(),
+					clearForm: true,
+					success: function(data) {
+						if(data["aid"] != null)
+						{
+							display_assets([null, data], false);
+						}
+						else
+						{
+							alert(data);
+						}
+					},
+					error: function(data) {
+						alert("some Error");
+					}
+				}); 
+				$('#new_loanee_input').on("input", function (input) { 
+					fetch("/getUsers/" + $("#new_loanee_input").val(),
+					{
+						headers: {
+							"Accept": "application/json"
+						}
+					})
+					.then((users) => {
+						users.json().then((readable_body) => {
+							let i = 0;
+							$("#email_options_list option").each(function () {
+								if(readable_body[i] && readable_body[i]['email'])
+								{
+									this.value = readable_body[i]['email'];
+								}
+								else
+								{
+									this.value = "";
+								}
+								i++;
+							});
+						});
+					});
+				});
+				$('#checkInForm').ajaxForm({ 
+					type: "POST",
+					url: $('#checkInForm').attr('action'),
+					data: $('#checkInForm').serialize(),
+					clearForm: true,
+					success: function(data) {
+						if(data["aid"] != null)
+						{
+							display_assets([null, data], false);
+						}
+						else
+						{
+							alert(data);
+						}
+					},
+					error: function(data) {
+						alert("some Error");
+					}
+				}); 
+			}); 
+		</script> 
+	</head>
+	<body>
+		<a href="/logout" id="signout_button">Sign Out</a>
+		<form id="keyword_input">
+			<input type="text" id="asset_input" name="keyword" autofocus placeholder="Keyword">
+			<button type="submit">Submit</button>
+		</form>
+		<div id="output_field" style="display: none">
+			<div id="admin_column" class="output_column">
+				<div id="admin_header" class="field_size"></div>
+				<div class="field_color field_size" id="asn"></div>
+				<div class="field_color field_size" id="aaid"></div>
+				<div class="field_color field_size" id="arid"></div>
+				<div class="field_color field_size" id="auser"></div>
+				<input type="hidden" id="auser_email" value="">
+			</div>
+			<div id="reftab_column" class="output_column">
+				<div id="reftab_header" class="field_size">Reftab Details</div>
+				<div class="field_color field_size" id="rsn"></div>
+				<div class="field_color field_size" id="raid"></div>
+				<div class="field_color field_size" id="rrid"></div>
+				<div class="field_color field_size" id="ruser"></div>
+				<input type="hidden" id="ruser_email" value="">
+			</div>
+			<div id="controls_column" class="output_column">
+				<div class="field_size">Controls</div>
+				<div class="input_container field_size">
+					<form id="snChangeForm" action="/changeSN">
+						<input class="new_info_submit" id="serial_number_input" name="serial_number" placeholder="Serial Number">
+						<input type="hidden" id="csrf_input" name="_csrf" value="<%= csrfToken %>">
+						<input type="hidden" class="last_asset_input" name="last_asset" value="">
+						<input type="hidden" class="last_asset_rid" name="rid" value="">
+						<input type="hidden" class="last_asset_model" name="model" value="">
+						<input type="hidden" class="last_asset_purchasing" name="purchasing" value="">
+					</form>
+				</div>
+				<div class="input_container field_size">
+					<form id="anChangeForm" action="/changeAN">
+						<input class="new_info_submit" id="asset_name_input" name="asset_name" placeholder="Asset Name">
+						<input type="hidden" id="csrf_input" name="_csrf" value="<%= csrfToken %>">
+						<input type="hidden" class="last_asset_input" name="last_asset" value="">
+						<input type="hidden" class="last_asset_rid" name="rid" value="">
+						<input type="hidden" class="last_asset_keyword" name="keyword" value="">
+						<input type="hidden" class="last_asset_model" name="model" value="">
+						<input type="hidden" class="last_asset_purchasing" name="purchasing" value="">
+					</form>
+				</div>
+				<div class="input_container field_size">
+
+				</div>
+				<div class="input_container field_size">
+					<form id="lnChangeForm" action="/changeLoanee">
+						<input class="new_info_submit" id="new_loanee_input" name="new_loanee" placeholder="Loanee Email" list="email_options_list">
+						<datalist id="email_options_list">
+							<option value=""></option>
+							<option value=""></option>
+							<option value=""></option>
+							<option value=""></option>
+							<option value=""></option>
+						</datalist>
+						<input type="hidden" id="csrf_input" name="_csrf" value="<%= csrfToken %>">
+						<input type="hidden" class="last_asset_input" name="last_asset" value="">
+						<input type="hidden" class="last_asset_rid" name="rid" value="">
+						<input type="hidden" class="last_asset_model" name="model" value="">
+						<input type="hidden" class="last_asset_purchasing" name="purchasing" value="">
+					</form>
+				</div>
+				<div class="input_container field_size">
+					<form id="checkInForm" action="/checkInAsset">
+						<button type="submit">Check in Asset</button>
+						<input type="hidden" id="csrf_input" name="_csrf" value="<%= csrfToken %>">
+						<input type="hidden" class="last_asset_rid" name="rid" value="">
+					</form>
+				</div>
+			</div>
+		</div>
+		<input type="hidden" id="hidden_last_asset"></input>
+	</body>
+	<script>
+		function display_assets(assets, display_not_found)
+		{
+			for(i of document.getElementsByClassName("field_color"))
+			{
+				i.style = "background-color: gray";
+			}
+			
+			if(assets[0] != null)
+			{
+				document.getElementById("admin_header").textContent = "Admin Details";
+				
+				document.getElementById("asn").textContent = assets[0]['serialNumber'];
+
+				document.getElementById("aaid").textContent = assets[0]['annotatedAssetId'];
+
+				document.getElementById("arid").textContent = "N/A";
+				if(assets[0]['recentUsers'])
+				{
+					document.getElementById("auser").textContent = assets[0]['recentUsers'][0]['email'];
+					document.getElementById("auser_email").value = assets[0]['recentUsers'][0]['email'];
+				}
+				else
+				{
+					document.getElementById("auser").textContent = "No recent user"
+					document.getElementById("auser_email").value = "None";
+				}
+			}
+			else if (display_not_found){
+				document.getElementById("asn").textContent = "Asset Not Found";
+			}
+
+			if(assets[1] != null)
+			{
+				document.getElementById("rsn").textContent = assets[1]['details']['Serial Number'];
+
+				document.getElementById("raid").textContent = assets[1]['title'];
+
+				document.getElementById("rrid").textContent = assets[1]['aid'];
+
+				if(assets[1]['loaneeName'])
+				{
+					document.getElementById("ruser").textContent = assets[1]['loaneeName'];
+					document.getElementById("ruser_email").value = assets[1]['loaneeEmail'];
+				}
+				else
+				{
+					document.getElementById("ruser").textContent = "Asset not checked out"
+					document.getElementById("ruser_email").value = "None";
+				}
+
+				for(i of document.getElementsByClassName("field_color"))
+				{
+					i.style = "background-color: gray";
+				}
+
+				if(document.getElementById("asn").textContent != document.getElementById("rsn").textContent)
+				{
+					document.getElementById("asn").style = "background-color: orange";
+					document.getElementById("rsn").style = "background-color: orange";
+				}
+
+				if(document.getElementById("aaid").textContent != document.getElementById("raid").textContent)
+				{
+					document.getElementById("aaid").style = "background-color: orange";
+					document.getElementById("raid").style = "background-color: orange";
+				}
+
+				if(document.getElementById("auser_email").value != document.getElementById("ruser_email").value)
+				{
+					document.getElementById("auser").style = "background-color: orange";
+					document.getElementById("ruser").style = "background-color: orange";
+				}
+			}
+			else if (display_not_found){
+				document.getElementById("rsn").textContent = "Asset Not Found";
+			}
+		}
+
+		async function fetchAsset(input) {
+			document.getElementById("hidden_last_asset").value = input;
+
+			for(i of document.getElementsByClassName("last_asset_keyword"))
+			{
+				i.value = input;
+			}
+			for(i of document.getElementsByClassName("last_asset_input"))
+			{
+				i.value = input;
+			}
+			
+			output = await fetch("./asset/" + input)
+			.then((output) => output.json());
+
+			if(output[0] == null && output[1] == null)
+			{
+				alert("Asset not found");
+				return;
+			}
+
+			document.getElementById("output_field").style.display = "flex";
+
+			if(output[1] != null)
+			{
+				for(i of document.getElementsByClassName("last_asset_rid"))
+				{
+					i.value = output[1]['aid'];
+				}
+			}
+
+			if(output[0] != null)
+			{
+				for(i of document.getElementsByClassName("last_asset_model"))
+				{
+					i.value = output[0]['model'];
+				}
+			}
+
+			if(output[1] != null && output[1]['details']['ECF Grant'])
+			{
+				if(output[1]['details']['ECF Grant'].indexOf("Yes") >= 0)
+				{
+					for(i of document.getElementsByClassName("last_asset_purchasing"))
+					{
+						i.value = "ECF Grant";
+					}
+				}
+				else
+				{
+					for(i of document.getElementsByClassName("last_asset_purchasing"))
+					{
+						i.value = "Technology";
+					}
+				}
+			}
+
+			display_assets(output, true);
+
+			return input;
+		}
+	</script>
+</html>

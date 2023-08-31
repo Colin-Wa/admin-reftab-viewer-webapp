@@ -1,0 +1,49 @@
+.field_color {
+    background-color: gray;
+}
+
+#signout_button {
+    right: 0;
+    position: absolute;
+    width: fit-content;
+    padding-right: 10px;
+}
+
+.field_size {
+    padding: 5px;
+    margin: 5px;
+    height: 20px;
+}
+
+#output_field {
+    display: flex;
+}
+
+.output_column {
+    flex: 33%;
+}
+
+.input_container {
+    padding: 5px;
+    margin: 5px;
+}
+
+.new_info_submit {
+    width: 80%;
+}
+
+.prompt {
+    margin-top: 15%;
+    display: flex;
+    justify-content: center;
+}
+
+.prompt-inner {
+    text-align: center;
+}
+
+.sign_in_button {
+    padding: 8px;
+    background-color: lightblue;
+    border-radius: 5px;
+}
